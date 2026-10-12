@@ -2,6 +2,12 @@
 set -eu
 
 WORKFLOW_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+if [[ "${1:-}" == "search" ]]; then
+  shift
+  exec "$WORKFLOW_DIR/search-meeting-note.sh" "$@"
+fi
+
 NOTES_DIR="${MEETING_NOTES_DIR:-$HOME/Documents/meeting_notes}"
 TITLE_HISTORY="${MEETING_TITLE_HISTORY:-$NOTES_DIR/.title_history}"
 AUTO_TITLE_LABEL="从 Markdown 自动识别标题"
