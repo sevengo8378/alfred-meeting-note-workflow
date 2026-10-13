@@ -1,6 +1,7 @@
 #!/bin/zsh
 set -eu
 
+WORKFLOW_DIR="$(cd "$(dirname "$0")" && pwd)"
 NOTES_DIR="${MEETING_NOTES_DIR:-$HOME/Documents/meeting_notes}"
 INITIAL_QUERY="$*"
 
@@ -9,33 +10,30 @@ if [[ ! -d "$NOTES_DIR" ]]; then
   exit 1
 fi
 
-# fzf 预览窗：从选中行（路径:行号:内容）取路径，剥掉 front matter 显示正文
-fzf_preview='file="{1}"; if [ -f "$file" ]; then sed "1,/^---$/d" "$file" | head -200; fi'
-fzf_args=(
-  --ansi
-  --query "$INITIAL_QUERY"
-  --delimiter ':'
-  --preview "$fzf_preview"
-  --preview-window 'right:60%:wrap'
-)
+list_script="$WORKFLOW_DIR/search-list.sh"
 
-# 用 ripgrep 逐行列出目录下所有纪要（含标题和正文），交给 fzf 实时过滤；
-# 未安装 rg 时降级为 grep。
-if command -v rg >/dev/null 2>&1; then
-  selection="$(rg --no-heading --line-number --color=always --smart-case '' "$NOTES_DIR" -g '*.md' | fzf "${fzf_args[@]}" || true)"
-else
-  selection="$(grep -rn --color=always '' "$NOTES_DIR" --include='*.md' | fzf "${fzf_args[@]}" || true)"
-fi
+# 左侧只显示文件名，输入时由 search-list.sh 实时全文搜索（标题命中优先）；
+# 右侧预览：有查询词时高亮显示匹配行，无查询词时显示正文。
+selection="$(
+  "$list_script" "$INITIAL_QUERY" \
+    | fzf \
+        --query "$INITIAL_QUERY" \
+        --disabled \
+        --delimiter '/' \
+        --with-nth '-1' \
+        --bind "change:reload:$list_script {q} || true" \
+        --preview 'f={}; if [ -n {q} ]; then rg --pretty --smart-case -F -C 3 -- {q} "$f"; else sed "1,/^---$/d" "$f" | head -200; fi' \
+        --preview-window 'right:60%:wrap'
+)"
 
 if [[ -z "$selection" ]]; then
   exit 0
 fi
 
-file="${selection%%:*}"
-if [[ ! -f "$file" ]]; then
-  echo "无法定位纪要文件：$file" >&2
+if [[ ! -f "$selection" ]]; then
+  echo "无法定位纪要文件：$selection" >&2
   exit 1
 fi
 
 # 回车后打印正文（剥掉 front matter）
-sed '1,/^---$/d' "$file"
+sed '1,/^---$/d' "$selection"

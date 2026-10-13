@@ -19,15 +19,9 @@ title: "产品例会"
 - 讨论了 Q3 预算
 EOF
 
-cat > "$FAKE_BIN/rg" <<'EOF'
-#!/bin/zsh
-printf '%s:1:---\n' "$TARGET_FILE"
-EOF
-chmod +x "$FAKE_BIN/rg"
-
 cat > "$FAKE_BIN/fzf" <<'EOF'
 #!/bin/zsh
-printf '%s:1:---\n' "$TARGET_FILE"
+printf '%s\n' "$TARGET_FILE"
 EOF
 chmod +x "$FAKE_BIN/fzf"
 

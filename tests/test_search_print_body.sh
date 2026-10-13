@@ -24,25 +24,17 @@ tags:
 - 决定推迟发布
 EOF
 
-cat > "$FAKE_BIN/rg" <<'EOF'
-#!/bin/zsh
-printf '%s\n' "$@" > "$RG_ARGS_CAPTURE"
-printf '%s:1:---\n' "$TARGET_FILE"
-EOF
-chmod +x "$FAKE_BIN/rg"
-
 cat > "$FAKE_BIN/fzf" <<'EOF'
 #!/bin/zsh
 printf '%s\n' "$@" > "$FZF_ARGS_CAPTURE"
-printf '%s:1:---\n' "$TARGET_FILE"
+printf '%s\n' "$TARGET_FILE"
 EOF
 chmod +x "$FAKE_BIN/fzf"
 
 export PATH="$FAKE_BIN:$PATH"
 export MEETING_NOTES_DIR="$NOTES_DIR"
-export RG_ARGS_CAPTURE="$TEST_DIR/rg_args"
-export FZF_ARGS_CAPTURE="$TEST_DIR/fzf_args"
 export TARGET_FILE="$TARGET_FILE"
+export FZF_ARGS_CAPTURE="$TEST_DIR/fzf_args"
 
 out="$("$WORKFLOW_DIR/search-meeting-note.sh")"
 
@@ -52,7 +44,5 @@ echo "$out" | grep -q -- '- 决定推迟发布'
 # 剥掉了 front matter
 ! echo "$out" | grep -q 'title:'
 ! echo "$out" | grep -q 'source:'
-# rg 以全文方式列出 .md 文件
-grep -q -- '-g' "$RG_ARGS_CAPTURE"
-grep -q -- '--smart-case' "$RG_ARGS_CAPTURE"
-grep -q "$NOTES_DIR" "$RG_ARGS_CAPTURE"
+# 左侧候选是文件路径（fzf 收到的是 search-list.sh 的输出，非逐行内容）
+grep -q -- '--with-nth' "$FZF_ARGS_CAPTURE"
