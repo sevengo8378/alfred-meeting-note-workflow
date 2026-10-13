@@ -1,5 +1,7 @@
 # 会议纪要保存工具
 
+![工具效果图](screen-shot.png)
+
 ## 功能
 
 - 从 macOS 剪贴板读取圆宝 Markdown 会议纪要
